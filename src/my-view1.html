@@ -15,8 +15,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-form/iron-form.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="shared-styles.html">
-<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
-<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
 
 <dom-module id="my-view1">
   <template>
@@ -74,22 +72,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             };
         }
 
-        ready(){
-            super.ready();
-            firebase.initializeApp({
-                apiKey: 'AIzaSyD8jGPf4x4py2uRakBJcLdP3IpzUFeF8HU',
-                authDomain: 'polyfirepoc.firebaseapp.com',
-                projectId: 'polyfirepoc'
-            });
-        }
-
         doAdd(){
-
 
             var self = this;
             self.set('loading', true);
-            console.info(self.formData);
             var db = firebase.firestore();
+
+            console.info(self.formData);
 
             db.collection("userdata").add({
                 name: self.formData.name,

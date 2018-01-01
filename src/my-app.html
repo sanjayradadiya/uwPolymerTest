@@ -21,6 +21,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="my-icons.html">
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
 
 <link rel="lazy-import" href="my-view1.html">
 <link rel="lazy-import" href="my-view2.html">
@@ -132,6 +134,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // Polymer.Element#rootPath
           rootPath: String,
         };
+      }
+
+      ready(){
+          super.ready();
+          firebase.initializeApp({
+              apiKey: 'AIzaSyD8jGPf4x4py2uRakBJcLdP3IpzUFeF8HU',
+              authDomain: 'polyfirepoc.firebaseapp.com',
+              projectId: 'polyfirepoc'
+          });
       }
 
       static get observers() {
