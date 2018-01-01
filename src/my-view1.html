@@ -9,7 +9,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="shared-styles.html">
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
 
 <dom-module id="my-view1">
   <template>
@@ -19,19 +26,84 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         padding: 10px;
       }
+
+      .loader-wapper {
+        background: rgba(255, 255, 255, 0.5);
+      }
     </style>
 
     <div class="card">
       <div class="circle">1</div>
       <h1>View One</h1>
-      <p>Ut labores minimum atomorum pro. Laudem tibique ut has.</p>
-      <p>Lorem ipsum dolor sit amet, per in nusquam nominavi periculis, sit elit oportere ea.Lorem ipsum dolor sit amet, per in nusquam nominavi periculis, sit elit oportere ea.Cu mei vide viris gloriatur, at populo eripuit sit.</p>
+      <form is="iron-form" id="form">
+        <paper-input always-float-label label="Name" value="{{formData.name}}"></paper-input>
+        <paper-textarea label="Description" always-float-label value="{{formData.description}}">
+        </paper-textarea>
+
+        <paper-button raised class="primary form-btn" type="submit" on-tap="doAdd">Login</paper-button>
+
+      </form>
+      <div class="fit layout horizontal center-center loader-wapper" hidden$="[[!loading]]">
+        <paper-spinner-lite active></paper-spinner-lite>
+      </div>
+      <span if="[[successMessage]]">{{successMessage}}</span>
     </div>
   </template>
 
   <script>
     class MyView1 extends Polymer.Element {
       static get is() { return 'my-view1'; }
+
+        static get properties(){
+            return{
+                formData: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    },
+                    notify: true,
+                },
+                loading: {
+                    type: Boolean,
+                    value: false
+                },
+                successMessage:{
+                    type:String,
+                    value:null
+                }
+            };
+        }
+
+        ready(){
+            super.ready();
+            firebase.initializeApp({
+                apiKey: 'AIzaSyD8jGPf4x4py2uRakBJcLdP3IpzUFeF8HU',
+                authDomain: 'polyfirepoc.firebaseapp.com',
+                projectId: 'polyfirepoc'
+            });
+        }
+
+        doAdd(){
+
+
+            var self = this;
+            self.set('loading', true);
+            console.info(self.formData);
+            var db = firebase.firestore();
+
+            db.collection("userdata").add({
+                name: self.formData.name,
+                description: self.formData.description,
+            })
+            .then(function(docRef) {
+                self.set('loading', false);
+                self.set('successMessage',"Document written with ID: " + docRef.id);
+            })
+            .catch(function(error) {
+                self.set('loading', false);
+                console.error("Error adding document: ", error);
+            });
+        }
     }
 
     window.customElements.define(MyView1.is, MyView1);
