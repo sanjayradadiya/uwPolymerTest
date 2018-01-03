@@ -9,6 +9,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid-column.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid-sorter.html">
+<link rel="import" href="../bower_components/time-display/time-display.html">
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="my-view2">
@@ -21,52 +25,84 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
 
-    <div class="card">
+    <!-- <div class="card">
       <div class="circle">2</div>
       <h1>View Two</h1>
       <template if="[[successData]]" is="dom-repeat" id="user" items="{{successData}}">
          <div class="card">
            <label>Name :</label>  <span>{{item.name}}</span><br/>
-           <label>Description :</label>  <span>{{item.description}}</span>
+           <label>Description :</label>  <span>{{item.description}}</span><br/>
+           <label>Created :</label>  <span>{{item.created}}</span>
         </div>
       </template>
 
-    </div>
+    </div> -->
 
+    <template is="dom-if" if="[[successData]]">
+      <vaadin-grid aria-label="Sorting Example" items="[[successData]]">
+
+        <vaadin-grid-column width="50px" flex-grow="0">
+          <template class="header">#</template>
+          <template>[[index]]</template>
+        </vaadin-grid-column>
+
+        <vaadin-grid-column>
+          <template class="header">
+            <vaadin-grid-sorter path="name">Name</vaadin-grid-sorter>
+          </template>
+          <template>[[item.name]]</template>
+        </vaadin-grid-column>
+
+        <vaadin-grid-column>
+          <template class="header">Description
+          </template>
+          <template>[[item.description]]</template>
+        </vaadin-grid-column>
+
+        <vaadin-grid-column>
+          <template class="header">
+            <vaadin-grid-sorter path="created">Created</vaadin-grid-sorter>
+          </template>
+          <template>
+            [[item.created]]
+          </template>
+        </vaadin-grid-column>
+
+      </vaadin-grid>
+    </template>
   </template>
 
   <script>
     class MyView2 extends Polymer.Element {
       static get is() { return 'my-view2'; }
 
-        static get properties(){
-            return{
-                loading: {
-                    type: Boolean,
-                    value: false
-                },
-                successData:{
-                    type:Array,
-                    value:null
-                }
-            };
-        }
+      static get properties() {
+        return {
+          loading: {
+            type: Boolean,
+            value: false
+          },
+          successData: {
+            type: Array,
+            value: null
+          }
+        };
+      }
 
-        ready(){
-            self = this;
-            super.ready();
-            var db = firebase.firestore();
-            var arryUser=[];
-            db.collection("userdata").get().then((querySnapshot) => {
-                 querySnapshot.forEach((doc) => {
-                 //self.set('successData',doc.data());
-                  arryUser.push(doc.data());
-               });
-              self.set('successData',arryUser);
-            });
+      ready() {
+        self = this;
+        super.ready();
+        var db = firebase.firestore();
+        var arryUser = [];
+        db.collection("userdata").get().then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            arryUser.push(doc.data());
+          });
+          self.set('successData', arryUser);
+        });
 
-            console.info(arryUser);
-        }
+        console.info(arryUser);
+      }
 
     }
 

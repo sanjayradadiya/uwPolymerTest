@@ -18,10 +18,13 @@
     "paper-input": "PolymerElements/paper-input#^2.0.5",
     "paper-button": "PolymerElements/paper-button#^2.0.0",
     "iron-form": "^2.0.1",
-    "paper-spinner": "PolymerElements/paper-spinner#^2.0.0"
+    "paper-spinner": "PolymerElements/paper-spinner#^2.0.0",
+    "vaadin-grid": "vaadin/vaadin-grid#^4.1.0"
   },
   "resolutions": {
-    "polymer": "^2.0.0"
+    "polymer": "^2.0.0",
+    "iron-a11y-keys-behavior": "1 - 2",
+    "webcomponentsjs": "^1.0.0"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^6.0.0"

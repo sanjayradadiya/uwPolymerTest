@@ -17,84 +17,86 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="my-view1">
-  <template>
-    <style include="shared-styles">
-      :host {
-        display: block;
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
 
-        padding: 10px;
-      }
+                padding: 10px;
+            }
 
-      .loader-wapper {
-        background: rgba(255, 255, 255, 0.5);
-      }
-    </style>
+            .loader-wapper {
+                background: rgba(255, 255, 255, 0.5);
+            }
+        </style>
 
-    <div class="card">
-      <div class="circle">1</div>
-      <h1>View One</h1>
-      <form is="iron-form" id="form">
-        <paper-input always-float-label label="Name" value="{{formData.name}}"></paper-input>
-        <paper-textarea label="Description" always-float-label value="{{formData.description}}">
-        </paper-textarea>
+        <div class="card">
+            <div class="circle">1</div>
+            <h1>View One</h1>
+            <form is="iron-form" id="form">
+                <paper-input always-float-label label="Name" value="{{formData.name}}"></paper-input>
+                <paper-textarea label="Description" always-float-label value="{{formData.description}}">
+                </paper-textarea>
 
-        <paper-button raised class="primary form-btn" type="submit" on-tap="doAdd">Login</paper-button>
+                <paper-button raised class="primary form-btn" type="submit" on-tap="doAdd">Login</paper-button>
 
-      </form>
-      <div class="fit layout horizontal center-center loader-wapper" hidden$="[[!loading]]">
-        <paper-spinner-lite active></paper-spinner-lite>
-      </div>
-      <span if="[[successMessage]]">{{successMessage}}</span>
-    </div>
-  </template>
+            </form>
+            <div class="fit layout horizontal center-center loader-wapper" hidden$="[[!loading]]">
+                <paper-spinner-lite active></paper-spinner-lite>
+            </div>
+            <span if="[[successMessage]]">{{successMessage}}</span>
+        </div>
+    </template>
 
-  <script>
-    class MyView1 extends Polymer.Element {
-      static get is() { return 'my-view1'; }
+    <script>
+        class MyView1 extends Polymer.Element {
+            static get is() { return 'my-view1'; }
 
-        static get properties(){
-            return{
-                formData: {
-                    type: Object,
-                    value: function() {
-                        return {};
+            static get properties() {
+                return {
+                    formData: {
+                        type: Object,
+                        value: function () {
+                            return {};
+                        },
+                        notify: true,
                     },
-                    notify: true,
-                },
-                loading: {
-                    type: Boolean,
-                    value: false
-                },
-                successMessage:{
-                    type:String,
-                    value:null
-                }
-            };
+                    loading: {
+                        type: Boolean,
+                        value: false
+                    },
+                    successMessage: {
+                        type: String,
+                        value: null
+                    }
+                };
+            }
+
+            doAdd() {
+
+                var self = this;
+                self.set('loading', true);
+                var db = firebase.firestore();
+
+                console.info(self.formData);
+
+                let createdDate = firebase.firestore.FieldValue.serverTimestamp();
+                db.collection("userdata").add({
+                    name: self.formData.name,
+                    description: self.formData.description,
+                    created: createdDate
+                })
+                    .then(function (docRef) {
+                        self.set('loading', false);
+                        self.set('successMessage', "Document written with ID: " + docRef.id);
+                    })
+                    .catch(function (error) {
+                        self.set('loading', false);
+                        console.error("Error adding document: ", error);
+                    });
+            }
         }
 
-        doAdd(){
-
-            var self = this;
-            self.set('loading', true);
-            var db = firebase.firestore();
-
-            console.info(self.formData);
-
-            db.collection("userdata").add({
-                name: self.formData.name,
-                description: self.formData.description,
-            })
-            .then(function(docRef) {
-                self.set('loading', false);
-                self.set('successMessage',"Document written with ID: " + docRef.id);
-            })
-            .catch(function(error) {
-                self.set('loading', false);
-                console.error("Error adding document: ", error);
-            });
-        }
-    }
-
-    window.customElements.define(MyView1.is, MyView1);
-  </script>
+        window.customElements.define(MyView1.is, MyView1);
+    </script>
 </dom-module>
