@@ -111,13 +111,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           }
       }
-
-      onFilterRecord(){
-          if (this.searchText) {
-              let query = firebase.firestore().collection('userdata').where("name","<",this.searchText);
-              this.recordBind(query);
-          }
-      }
     }
 
     window.customElements.define(MyView2.is, MyView2);
