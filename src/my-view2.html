@@ -100,9 +100,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               let collection = firebase.firestore()
                   .collection('userdata');
               if (selectedItemTxt == "A-Z") {
-                  query = collection.orderBy('name', 'asc');
+                  query = collection.orderBy('name_insensitive', 'asc');
               } else if (selectedItemTxt == "Z-A") {
-                  query = collection.orderBy('name', 'desc');
+                  query = collection.orderBy('name_insensitive', 'desc');
               } else if (selectedItemTxt == "Most Recent") {
                   query = collection.orderBy('created', 'desc');
               }

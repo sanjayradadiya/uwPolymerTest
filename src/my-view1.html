@@ -78,22 +78,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 self.set('loading', true);
                 var db = firebase.firestore();
 
-                console.info(self.formData);
-
                 let createdDate = firebase.firestore.FieldValue.serverTimestamp();
                 db.collection("userdata").add({
                     name: self.formData.name,
+                    name_insensitive: self.formData.name.toUpperCase(),
                     description: self.formData.description,
                     created: createdDate
                 })
-                    .then(function (docRef) {
-                        self.set('loading', false);
-                        self.set('successMessage', "Document written with ID: " + docRef.id);
-                    })
-                    .catch(function (error) {
-                        self.set('loading', false);
-                        console.error("Error adding document: ", error);
-                    });
+                .then(function (docRef) {
+                    self.set('loading', false);
+                    self.set('successMessage', "Document written with ID: " + docRef.id);
+                })
+                .catch(function (error) {
+                    self.set('loading', false);
+                    console.error("Error adding document: ", error);
+                });
             }
         }
 
