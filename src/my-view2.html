@@ -32,6 +32,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <paper-item>Most Recent</paper-item>
         </paper-listbox>
       </paper-dropdown-menu>
+
+      <paper-dropdown-menu id="priority" label="Filter" on-selected-item-changed="onPriorityFilter">
+        <paper-listbox slot="dropdown-content" selected="3">
+          <paper-item>High</paper-item>
+          <paper-item>Medium</paper-item>
+          <paper-item>Low</paper-item>
+          <paper-item>All</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+
       <template if="[[successData]]" is="dom-repeat" id="user" items="{{successData}}">
         <div class="card">
           <label>Name :</label>
@@ -39,6 +49,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <br/>
           <label>Description :</label>
           <span>{{item.description}}</span>
+          <br/>
+          <label>Priority :</label>
+          <span>{{item.priority}}</span>
           <br/>
           <label>Created :</label>
           <span>{{item.created}}</span>
@@ -64,7 +77,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Array,
             value: null
           },
-          searchText:String
+          searchText: String
         };
       }
 
@@ -77,39 +90,57 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
       }
 
-      recordBind(query){
+      onPriorityFilter() {
+        self.onSelectionChanged();
+      }
+
+      recordBind(query) {
         var arryUser = [];
         query.get()
-            .then(function (querySnapshot) {
-                querySnapshot.forEach(function (doc) {
-                    arryUser.push(doc.data());
-                });
-                self.set('successData', arryUser);
-            })
-            .catch(function (error) {
-                console.log("Error getting documents: ", error);
+          .then(function (querySnapshot) {
+            querySnapshot.forEach(function (doc) {
+              arryUser.push(doc.data());
             });
+            self.set('successData', arryUser);
+          })
+          .catch(function (error) {
+            console.log("Error getting documents: ", error);
+          });
       }
 
       onSelectionChanged() {
-          var selectedItem = this.$.dropdown.selectedItem;
-          if (selectedItem) {
-              let selectedItemTxt = selectedItem.innerText;
+        var selectedItem = this.$.dropdown.selectedItem;
+        var priority = this.$.priority.selectedItem;
+        if (selectedItem && priority) {
+          let selectedItemTxt = selectedItem.innerText;
+          let priorityTxt = priority.innerText;
 
-              let query;
-              let collection = firebase.firestore()
-                  .collection('userdata');
-              if (selectedItemTxt == "A-Z") {
-                  query = collection.orderBy('name_insensitive', 'asc');
-              } else if (selectedItemTxt == "Z-A") {
-                  query = collection.orderBy('name_insensitive', 'desc');
-              } else if (selectedItemTxt == "Most Recent") {
-                  query = collection.orderBy('created', 'desc');
-              }
-
-              this.recordBind(query);
-
+          let query;
+          let collection = firebase.firestore()
+            .collection('userdata');
+          if (selectedItemTxt == "A-Z") {
+            query = collection.orderBy('name_insensitive', 'asc');
+          } else if (selectedItemTxt == "Z-A") {
+            query = collection.orderBy('name_insensitive', 'desc');
+          } else if (selectedItemTxt == "Most Recent") {
+            query = collection.orderBy('created', 'desc');
           }
+
+          if (priorityTxt == "All") {
+            this.recordBind(query);
+            return;
+          }
+
+          if (priorityTxt == "High") {
+            query = query.where("priority", "==", "High");
+          } else if (priorityTxt == "Low") {
+            query = query.where("priority", "==", "Low");
+          } else if (priorityTxt == "Medium") {
+            query = query.where("priority", "==", "Medium");
+          }
+
+          this.recordBind(query);
+        }
       }
     }
 
