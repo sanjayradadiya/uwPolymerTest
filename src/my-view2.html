@@ -10,18 +10,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
 <link rel="import" href="shared-styles.html">
+<link rel="import" href="view-form.html">
 
 <dom-module id="my-view2">
   <template>
-    <style include="shared-styles">
+    <style include="shared-styles iron-flex iron-flex-alignment">
       :host {
         display: block;
-
         padding: 10px;
       }
+
+      .item {
+        margin: 8px;
+      }
+
+      .btn-dialog{
+        position: absolute;
+        right: 87px;
+      }
+
+      label{
+        font-weight: bold;
+      }
+
+      paper-card{
+        width:100%;
+        margin-bottom: 14px;
+      }
+
     </style>
 
     <div class="card">
@@ -42,25 +65,44 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-listbox>
       </paper-dropdown-menu>
 
+      <br/><br/>
+
       <template if="[[successData]]" is="dom-repeat" id="user" items="{{successData}}">
-        <div class="card">
-          <label>Name :</label>
-          <span>{{item.name}}</span>
-          <br/>
-          <label>Description :</label>
-          <span>{{item.description}}</span>
-          <br/>
-          <label>Priority :</label>
-          <span>{{item.priority}}</span>
-          <br/>
-          <label>Created :</label>
-          <span>{{item.created}}</span>
-        </div>
+        <paper-card>
+          <div class="card-content">
+            <div class="layout vertical start">
+              <div class="item">
+                <label>Name :</label>
+                <span>{{item.name}}</span>
+              </div>
+              <div class="item">
+                <label>Description :</label>
+                <span>{{item.description}}</span>
+              </div>
+              <div class="item">
+                <label>Priority :</label>
+                <span>{{item.priority}}</span>
+              </div>
+              <div class="item">
+                <label>Created :</label>
+                <span>{{item.created}}</span>
+              </div>
+              <div class="item">
+                <label>Updated :</label>
+                <span>{{item.updated}}</span>
+              </div>
+
+            </div>
+          </div>
+          <div class="card-actions">
+            <paper-button class="indigo1" on-tap="openDialog">Update</paper-button>
+          </div>
+        </paper-card>
       </template>
-
+      <paper-dialog id="dialog">
+        <view-form id="viewForm" mode="edit" on-updated="dismissDialog"></view-form>
+      </paper-dialog>
     </div>
-
-
   </template>
 
   <script>
@@ -88,6 +130,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         db.collection("userdata").onSnapshot((querySnapshot) => {
           self.onSelectionChanged();
         });
+      }
+
+      openDialog(e) {
+         this.$.viewForm.formData = e.model.__data.item;
+         this.$.dialog.open();
+      }
+
+      dismissDialog() {
+        this.$.dialog.close();
       }
 
       onPriorityFilter() {

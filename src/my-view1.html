@@ -18,6 +18,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="shared-styles.html">
+<link rel="import" href="view-form.html">
 
 <dom-module id="my-view1">
     <template>
@@ -36,78 +37,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <div class="card">
             <div class="circle">1</div>
             <h1>View One</h1>
-            <form is="iron-form" id="form">
-                <paper-input always-float-label label="Name" value="{{formData.name}}"></paper-input>
-                <paper-textarea label="Description" always-float-label value="{{formData.description}}">
-                </paper-textarea>
-                <paper-dropdown-menu id="priority" label="Priority">
-                    <paper-listbox slot="dropdown-content" selected="0">
-                        <paper-item>High</paper-item>
-                        <paper-item>Medium</paper-item>
-                        <paper-item>Low</paper-item>
-                    </paper-listbox>
-                </paper-dropdown-menu>
-                <br/>
-                <br/>
-                <paper-button raised class="primary form-btn" type="submit" on-tap="doAdd">Add</paper-button>
-
-            </form>
-            <div class="fit layout horizontal center-center loader-wapper" hidden$="[[!loading]]">
-                <paper-spinner-lite active></paper-spinner-lite>
-            </div>
-            <span if="[[successMessage]]">{{successMessage}}</span>
+            <view-form mode="add"></view-form>
         </div>
     </template>
 
     <script>
         class MyView1 extends Polymer.Element {
             static get is() { return 'my-view1'; }
-
-            static get properties() {
-                return {
-                    formData: {
-                        type: Object,
-                        value: function () {
-                            return {};
-                        },
-                        notify: true,
-                    },
-                    loading: {
-                        type: Boolean,
-                        value: false
-                    },
-                    successMessage: {
-                        type: String,
-                        value: null
-                    }
-                };
-            }
-
-            doAdd() {
-
-                var self = this;
-                self.set('loading', true);
-                var db = firebase.firestore();
-
-                console.info(self.formData);
-
-                let createdDate = firebase.firestore.FieldValue.serverTimestamp();
-                db.collection("userdata").add({
-                    name: self.formData.name,
-                    name_insensitive: self.formData.name.toUpperCase(),
-                    description: self.formData.description,
-                    priority: this.$.priority.selectedItem.innerText,
-                    created: createdDate
-                })
-                    .then(function (docRef) {
-                        self.set('loading', false);
-                        self.set('successMessage', "Document written with ID: " + docRef.id);
-                    })
-                    .catch(function (error) {
-                        self.set('loading', false);
-                        console.error("Error adding document: ", error);
-                    });
-            }
         }
 
         window.customElements.define(MyView1.is, MyView1);

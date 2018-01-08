@@ -1,0 +1,165 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="view-form">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+                padding: 10px;
+            }
+
+            .loader-wapper {
+                background: rgba(255, 255, 255, 0.5);
+            }
+        </style>
+
+        <template is="dom-if" if="[[_eq(mode, 'add')]]">
+            <paper-input always-float-label label="Name" value="{{formData.name}}"></paper-input>
+            <paper-textarea label="Description" always-float-label value="{{formData.description}}">
+            </paper-textarea>
+            <paper-dropdown-menu id="priority" label="Priority">
+                <paper-listbox slot="dropdown-content" selected="0">
+                    <paper-item>High</paper-item>
+                    <paper-item>Medium</paper-item>
+                    <paper-item>Low</paper-item>
+                </paper-listbox>
+            </paper-dropdown-menu>
+            <paper-button raised class="primary" type="submit" on-tap="doAdd">Add</paper-button>
+            <div class="fit layout horizontal center-center loader-wapper" hidden$="[[!loading]]">
+                <paper-spinner-lite active></paper-spinner-lite>
+            </div>
+            <span if="[[successMessage]]">{{successMessage}}</span>
+        </template>
+        <template is="dom-if" if="[[_eq(mode, 'edit')]]">
+            <paper-input always-float-label label="Name" value="{{formData.name}}"></paper-input>
+            <paper-textarea label="Description" always-float-label value="{{formData.description}}">
+            </paper-textarea>
+            <paper-dropdown-menu id="priority" label="Priority">
+                <paper-listbox id="listbox" slot="dropdown-content">
+                    <paper-item>High</paper-item>
+                    <paper-item>Medium</paper-item>
+                    <paper-item>Low</paper-item>
+                </paper-listbox>
+            </paper-dropdown-menu>
+            <paper-button raised class="primary" on-tap="doUpdate">Update</paper-button>
+        </template>
+    </template>
+
+    <script>
+        class ViewForm extends Polymer.Element {
+            static get is() { return 'view-form'; }
+
+            static get properties() {
+                return {
+                    formData: {
+                        type: Object,
+                        value: function () {
+                            return {};
+                        },
+                        notify: true,
+                        observer: "handleFormDataChange"
+                    },
+                    loading: {
+                        type: Boolean,
+                        value: false
+                    },
+                    successMessage: {
+                        type: String,
+                        value: null
+                    },
+                    mode: String
+                };
+            }
+
+            _eq(str1, str2) {
+                return str1 === str2;
+            }
+
+            handleFormDataChange() {
+                let listBox = this.root.querySelector("#listbox");
+                if (this.mode === "edit" && listBox) {
+                    listBox.selected = this.getIndex();
+                }
+            }
+
+            getIndex() {
+                let priority = this.formData.priority;
+                if (priority === "High") {
+                    return 0;
+                } else if (priority === "Medium") {
+                    return 1;
+                } else if (priority === "Low") {
+                    return 2;
+                }
+            }
+
+            doAdd() {
+                this.set('loading', true);
+                let createdDate = firebase.firestore.FieldValue.serverTimestamp();
+
+                let docId = this.guid();
+                let data = {
+                    id: docId,
+                    name: this.formData.name,
+                    name_insensitive: this.formData.name.toUpperCase(),
+                    description: this.formData.description,
+                    priority: this.shadowRoot.querySelector("#priority").selectedItem.innerText,
+                    created: createdDate,
+                    updated: createdDate
+                }
+
+                this.saveOrUpdateDataToFirebase(docId, data);
+            }
+
+            doUpdate() {
+                var self = this;
+                self.set('loading', true);
+
+                let docId = this.formData.id;
+                let updatedDate = firebase.firestore.FieldValue.serverTimestamp();
+
+                this.formData.updated = updatedDate;
+                this.formData.priority = this.root.querySelector("#priority").selectedItem.innerText;
+                this.formData.name_insensitive = this.formData.name.toUpperCase();
+
+                this.saveOrUpdateDataToFirebase(docId, this.formData);
+                this.dispatchEvent(new CustomEvent('updated'));
+            }
+
+            saveOrUpdateDataToFirebase(docId, data) {
+                let self = this;
+                let db = firebase.firestore();
+                db.collection("userdata").doc(docId).set(data, { merge: true })
+                    .then(function (docRef) {
+                        self.set('loading', false);
+                        self.set('successMessage', "Document written with ID: " + docId);
+                    })
+                    .catch(function (error) {
+                        self.set('loading', false);
+                        console.error("Error adding document: ", error);
+                    });
+            }
+
+            guid() {
+                function s4() {
+                    return Math.floor((1 + Math.random()) * 0x10000)
+                        .toString(16)
+                        .substring(1);
+                }
+                return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                    s4() + '-' + s4() + s4() + s4();
+            }
+        }
+
+        window.customElements.define(ViewForm.is, ViewForm);
+    </script>
+</dom-module>
