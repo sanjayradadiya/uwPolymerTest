@@ -62,7 +62,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </paper-dropdown-menu>
 
       <paper-input always-float-label id="searchInput" label="Search" on-keyup="searchData"></paper-input>
-      <template if="[[successData]]" is="dom-repeat" id="user" items="{{successData}}">
+      <template is="dom-if" if="[[isRecordAvailable(successData)]]">
+      <template is="dom-repeat" id="user" items="{{successData}}">
         <div class="card layout vertical start">
           <div class="item">
             <label>Name :</label>
@@ -87,7 +88,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <paper-button raised class="primary" on-tap="openDialog">Update</paper-button>
         </div>
       </template>
-      <div if="!{{successData}}">No data found !</div>
+    </template>
+      <template is="dom-if" if="[[!isRecordAvailable(successData)]]">No data found !</template>
       <paper-dialog id="dialog">
         <view-form id="viewForm" mode="edit" on-updated="dismissDialog"></view-form>
       </paper-dialog>
@@ -106,7 +108,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           successData: {
             type: Array,
-            value: null
+            value: function(){
+              return [];
+            }
           },
           searchText: String
         };
@@ -119,6 +123,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         db.collection("userdata").onSnapshot((querySnapshot) => {
           self.onSelectionChanged();
         });
+      }
+
+      isRecordAvailable(successData){
+        return this.successData.length > 0;
       }
 
       openDialog(e) {
@@ -176,7 +184,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
 
         Promise.all(userPromises).then((values) => {
-          this.set("successData", values);
+          var userData = [];
+          values.forEach(function(item){
+            if(item){
+              userData.push(item);
+            }
+          });
+          this.set("successData", userData);
         });
       }
 
@@ -197,7 +211,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       retrieveData(id) {
         var docRef = firebase.firestore().collection("userdata").doc(id);
         return docRef.get().then((doc) => {
-           return doc.data();
+           if(doc.exists){
+             return doc.data();
+           }
         }).catch(function (error) {
           console.log("Error getting document:", error);
         });
@@ -218,7 +234,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else if (selectedItemTxt == "Z-A") {
             query = collection.orderBy('name_insensitive', 'desc');
           } else if (selectedItemTxt == "Most Recent") {
-            query = collection.orderBy('created', 'desc');
+            query = collection.orderBy('updated', 'desc');
           }
 
           if (priorityTxt == "All") {
