@@ -34,13 +34,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       .content {
-        max-height: 250px;
+        max-height: 241px;
         overflow: auto;
+        position: absolute;
+        background-color: white;
+        z-index: 9999;
+        width: 93.8%;
       }
 
       .autocompleteItem {
         margin: 0px;
-        padding: 2px 8px;
+        padding: 7px 13px;
         border: 1px solid #dedede;
       }
 
@@ -61,7 +65,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       method="POST"
       handle-as="json"
       on-response="handleAutoCompleteResponse"
-      debounce-duration='300'
+      debounce-duration='100'
       with-credentials="true"
       id="autocompleteAjax">
     </iron-ajax>
@@ -184,8 +188,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         searchInput.value  = e.model.__data.item.name;
         var collapse = this.$.collapse;
         collapse.toggle();
-
-          this.openElasticSearch(searchInput.value);
+        this.openElasticSearch(searchInput.value);
       }
 
       openDialog(e) {
@@ -203,22 +206,46 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       autocompleteSearchData(e) {
         this._debouncer = Polymer.Debouncer.debounce(this._debouncer,
-          Polymer.Async.timeOut.after(500),
+          Polymer.Async.timeOut.after(100),
           () => {
 
             var search = this.root.querySelector("#autocomplete").value;
             if (!search) {
               this.onSelectionChanged();
+              var collapse = this.$.collapse;
+              if (collapse.opened) {
+                collapse.toggle()
+              }
               return;
             }
 
             var body = {
+              "size" : 50,
               "query": {
-                "wildcard": {
-                  "name": "*" + search + "*"
+                "bool": {
+                  "should": [
+                    {
+                      "multi_match": {
+                        "query": search,
+                        "fields": [
+                          "name"
+                        ],
+                        "type": "phrase_prefix",
+                        "operator": "OR",
+                        "slop": 0,
+                        "prefix_length": 0,
+                        "max_expansions": 50,
+                        "lenient": false,
+                        "zero_terms_query": "NONE",
+                        "boost": 1
+                      }
+                    }
+                  ],
+                  "disable_coord": false,
+                  "adjust_pure_negative": true,
+                  "boost": 1
                 }
-              },
-              "_source": ["name"]
+              }
             };
 
             var ajax = this.root.querySelector("#autocompleteAjax");
@@ -228,17 +255,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             ajax.headers["Content-Type"] = "application/json";
 
             var search = this.root.querySelector("#autocomplete").value;
-            var collapse = this.$.collapse;
-            console.log(collapse.opened && search == '');
-            if (!collapse.opened && search.length > 2) {
-              collapse.toggle()
-            } else if (collapse.opened && (search == '' || search.length < 3)) {
-                collapse.toggle()
-              }
-
-            if (search.length > 2) {
-              ajax.generateRequest();
-            }
+            ajax.generateRequest();
           });
       }
 
@@ -259,6 +276,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               userData.push(item);
             }
           });
+
+          var collapse = this.$.collapse;
+            if (!collapse.opened && userData.length > 0) {
+              collapse.toggle()
+            } else if (collapse.opened && userData.length == 0) {
+                collapse.toggle()
+            }
           this.set("autocompleteData", userData);
         });
       }
