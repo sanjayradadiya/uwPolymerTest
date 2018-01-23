@@ -16,17 +16,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/polymer/lib/utils/debounce.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
 <link rel="import" href="shared-styles.html">
 <link rel="import" href="view-form.html">
 
 <dom-module id="my-view2">
   <template>
-    <style include="shared-styles iron-flex iron-flex-alignment">
+    <style include="shared-styles iron-flex iron-flex-alignment iron-flex-factors">
       :host {
         display: block;
-        padding: 10px;
       }
 
       .item {
@@ -39,7 +49,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         position: absolute;
         background-color: white;
         z-index: 9999;
-        width: 93.8%;
+        width: 42%;
+        right: 177px;
+        top: 52px;
       }
 
       .autocompleteItem {
@@ -48,96 +60,180 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         border: 1px solid #dedede;
       }
 
+      .page-header {
+        background: #e0e0e0;
+      }
+
+      #searchInput {
+        margin: 6px 8px 8px 8px;
+      }
+
+      #autocomplete {
+        margin: 8px;
+      }
+
+      .data-container {
+        padding: 10px;
+      }
+
+      app-header {
+        top: 64px;
+        background: gainsboro;
+      }
+
+      .totalcount {
+        margin: 0px;
+        height: 36px;
+        width: 36px;
+        border: 1px solid black;
+        border-radius: 50%;
+        text-align: center;
+
+        @apply --paper-font-body2;
+        font-size: 18px;
+      }
+
+      .totalcount span{
+        vertical-align: -webkit-baseline-middle;
+      }
     </style>
 
-    <iron-ajax
-      url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search"
-      method="POST"
-      handle-as="json"
-      on-response="handleResponse"
-      debounce-duration='300'
-      with-credentials="true"
-      id="ajax">
-    </iron-ajax>
-
-    <iron-ajax
-      url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search"
-      method="POST"
-      handle-as="json"
-      on-response="handleAutoCompleteResponse"
-      debounce-duration='100'
-      with-credentials="true"
-      id="autocompleteAjax">
-    </iron-ajax>
-
-    <div class="card">
-      <paper-dropdown-menu id="dropdown" label="Sort On" on-selected-item-changed="onSelectionChanged">
-        <paper-listbox slot="dropdown-content" selected="0">
-          <paper-item>A-Z</paper-item>
-          <paper-item>Z-A</paper-item>
-          <paper-item>Most Recent</paper-item>
-        </paper-listbox>
-      </paper-dropdown-menu>
-
-      <paper-dropdown-menu id="priority" label="Filter" on-selected-item-changed="onPriorityFilter">
-        <paper-listbox slot="dropdown-content" selected="3">
-          <paper-item>High</paper-item>
-          <paper-item>Medium</paper-item>
-          <paper-item>Low</paper-item>
-          <paper-item>All</paper-item>
-        </paper-listbox>
-      </paper-dropdown-menu>
-      <paper-input always-float-label id="autocomplete" label="Autocomplete Search" on-keyup="autocompleteSearchData"></paper-input>
-      <iron-collapse id="collapse">
-        <div class="content">
-          <template is="dom-if" if="[[isRecordAvailable(autocompleteData)]]">
-            <template is="dom-repeat" id="user" items="{{autocompleteData}}">
-              <div class="item autocompleteItem" on-tap="selectItem">
-                <label>{{item.name}}</label>
+    <app-route route="{{route}}" pattern="/view2" query-params="{{queryParams}}">
+    </app-route>
+    <app-header-layout>
+      <app-header slot="header" fixed condenses effects="waterfall">
+        <app-toolbar sticky>
+          
+          <div class="totalcount"><span>{{total}}</span></div>
+          <paper-input no-label-float class="flex" value="{{q}}" id="searchInput" label="Search" on-keyup="searchData">
+            <paper-icon-button slot="suffix" icon="search"></paper-icon-button>
+          </paper-input>
+      
+          <paper-input class="flex" no-label-float id="autocomplete" label="Autocomplete Search" on-keyup="autocompleteSearchData"></paper-input>
+          <iron-collapse id="collapse">
+            <div class="content">
+              <template is="dom-if" if="[[isRecordAvailable(autocompleteData)]]">
+                <template is="dom-repeat" id="user" items="{{autocompleteData}}">
+                  <div class="item autocompleteItem" on-tap="selectItem">
+                    <label>{{item.name}}</label>
+                  </div>
+                </template>
+              </template>
+              <template is="dom-if" if="[[!isRecordAvailable(autocompleteData)]]">
+                <div class="item autocompleteItem">
+                  No record found !
+                </div>
+              </template>
+            </div>
+          </iron-collapse>
+          <paper-menu-button>
+            <paper-icon-button icon="sort" title="Sort" slot="dropdown-trigger"></paper-icon-button>
+            <paper-listbox slot="dropdown-content" id="dropdown" selected="{{dropdownSelected}}" label="Sort On" on-selected-item-changed="onSelectionChanged">
+              <paper-item>A-Z</paper-item>
+              <paper-item>Z-A</paper-item>
+              <paper-item>Most Recent</paper-item>
+            </paper-listbox>
+          </paper-menu-button>
+      
+          <paper-menu-button>
+            <paper-icon-button icon="image:tune" title="Priority" slot="dropdown-trigger"></paper-icon-button>
+            <paper-listbox slot="dropdown-content" id="priority" selected="{{prioritySelected}}" id="priority" label="Filter" on-selected-item-changed="onPriorityFilter">
+              <paper-item>High</paper-item>
+              <paper-item>Medium</paper-item>
+              <paper-item>Low</paper-item>
+              <paper-item>All</paper-item>
+            </paper-listbox>
+          </paper-menu-button>
+      
+          <paper-icon-button class="share" title="Share" icon="social:share" on-tap="openShareLinkDialog"></paper-icon-button>
+        </app-toolbar>
+      </app-header>
+      <div></div>
+      <div class="data-container">
+        <iron-ajax
+          url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search"
+          method="POST"
+          handle-as="json"
+          on-response="handleResponse"
+          debounce-duration='300'
+          with-credentials="true"
+          id="ajax">
+        </iron-ajax>
+        
+        <iron-ajax
+          url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search"
+          method="POST"
+          handle-as="json"
+          on-response="handleAutoCompleteResponse"
+          debounce-duration='100'
+          with-credentials="true"
+          id="autocompleteAjax">
+        </iron-ajax>
+        <!-- <paper-input always-float-label id="autocomplete" label="Autocomplete Search" on-keyup="autocompleteSearchData"></paper-input>
+        <iron-collapse id="collapse">
+          <div class="content">
+            <template is="dom-if" if="[[isRecordAvailable(autocompleteData)]]">
+              <template is="dom-repeat" id="user" items="{{autocompleteData}}">
+                <div class="item autocompleteItem" on-tap="selectItem">
+                  <label>{{item.name}}</label>
+                </div>
+              </template>
+            </template>
+            <template is="dom-if" if="[[!isRecordAvailable(autocompleteData)]]">
+              <div class="item autocompleteItem">
+                No record found !
+              </div>
+            </template>
+          </div>
+        </iron-collapse> -->
+          <div class="layout horizontal end-justified">
+            <div style="margin-right: 8px;">Sort : {{dropdownText}}</div>
+            <span>|</span>
+            <div style="margin-left: 8px;">Filter: {{priorityText}}</div>
+          </div>
+          <template is="dom-if" if="[[isRecordAvailable(successData)]]">
+            <template is="dom-repeat" id="user" items="{{successData}}">
+              <div class="card layout vertical start">
+                <div class="item">
+                  <label>Name :</label>
+                  <span>{{item.name}}</span>
+                </div>
+                <div class="item">
+                  <label>Description :</label>
+                  <span>{{item.description}}</span>
+                </div>
+                <div class="item">
+                  <label>Priority :</label>
+                  <span>{{item.priority}}</span>
+                </div>
+                <div class="item">
+                  <label>Created :</label>
+                  <span>{{item.created}}</span>
+                </div>
+                <div class="item">
+                  <label>Updated :</label>
+                  <span>{{item.updated}}</span>
+                </div>
+                <paper-button raised class="primary" on-tap="openDialog">Update</paper-button>
               </div>
             </template>
           </template>
-          <template is="dom-if" if="[[!isRecordAvailable(autocompleteData)]]">
-            <div class="item autocompleteItem">
-              No record found !
-            </div>
+          <template is="dom-if" if="[[!isRecordAvailable(successData)]]">
+              <div class="card layout vertical center"> No data found ! </div>
           </template>
+        <paper-dialog id="dialog" modal>
+          <view-form id="viewForm" mode="edit" on-updated="dismissDialog"></view-form>
+        </paper-dialog>
+        <paper-dialog id="shareLinkDialog" modal>
+          <div id="sharedLink">Share link goes here.</div>
+          <input id="sharedLinkInput" style="opacity: 0"/>
+          <div class="buttons">
+            <paper-button on-tap="copyText">Copy</paper-button>
+            <paper-button dialog-confirm autofocus>Close</paper-button>
+          </div>
+        </paper-dialog>
         </div>
-      </iron-collapse>
-
-      <paper-input always-float-label id="searchInput" label="Search" on-keyup="searchData"></paper-input>
-      <template is="dom-if" if="[[isRecordAvailable(successData)]]">
-      <template is="dom-repeat" id="user" items="{{successData}}">
-        <div class="card layout vertical start">
-          <div class="item">
-            <label>Name :</label>
-            <span>{{item.name}}</span>
-          </div>
-          <div class="item">
-            <label>Description :</label>
-            <span>{{item.description}}</span>
-          </div>
-          <div class="item">
-            <label>Priority :</label>
-            <span>{{item.priority}}</span>
-          </div>
-          <div class="item">
-            <label>Created :</label>
-            <span>{{item.created}}</span>
-          </div>
-          <div class="item">
-            <label>Updated :</label>
-            <span>{{item.updated}}</span>
-          </div>
-          <paper-button raised class="primary" on-tap="openDialog">Update</paper-button>
-        </div>
-      </template>
-      </template>
-      <template is="dom-if" if="[[!isRecordAvailable(successData)]]">No data found !</template>
-      <paper-dialog id="dialog">
-        <view-form id="viewForm" mode="edit" on-updated="dismissDialog"></view-form>
-      </paper-dialog>
-    </div>
+      </app-header-layout>
   </template>
 
   <script>
@@ -156,39 +252,93 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               return [];
             }
           },
+          totalSuccessData: {
+            type: Array,
+            value: function(){
+              return [];
+            }
+          },
           autocompleteData: {
             type: Array,
             value: function(){
               return [];
             }
           },
-          searchText: String
+          prioritySelected: String,
+          dropdownSelected: String,
+          priorityText: String,
+          dropdownText: String,
+          searchText: String,
+          route: Object,
+          queryParams: Object,
+          q: String,
+          total: {
+            type: Number,
+            value: function(){
+              return 0;
+            }
+          }
         };
       }
 
       ready() {
-        self = this;
         super.ready();
+        self = this;
         var db = firebase.firestore();
         db.collection("userdata").onSnapshot((querySnapshot) => {
+          this.total = querySnapshot.size;
+          console.log("Hello ", this.total);
           self.onSelectionChanged();
         });
 
-        var input = this.root.querySelector("#autocomplete").$.container;
-        input.style.paddingBottom = "0px";
+        var autocomplete = this.root.querySelector("#autocomplete").$.container;
+        autocomplete.style.paddingBottom = "0px";
+
+        var priority = this.root.querySelector("#priority").$.container;
+        var priorityTxt = this.queryParams.priority;
+        if (!priorityTxt || priorityTxt == 'All') {
+          this.prioritySelected = "3";
+        } else if (priorityTxt == "High") {
+          this.prioritySelected = "0";
+        } else if (priorityTxt == "Medium") {
+          this.prioritySelected = "1";
+        } else if (priorityTxt == "Low") {
+          this.prioritySelected = "2";
+        }
+
+        var dropdown = this.root.querySelector("#dropdown").$.container;
+        var sort = this.queryParams.sort;
+
+        if (!sort || sort == "A-Z") {
+          this.dropdownSelected = "0";
+        } else if (sort == "Z-A") {
+          this.dropdownSelected = "1";
+        } else if (sort == "Most Recent") {
+          this.dropdownSelected = "2";
+        }
+
+        this.q = this.queryParams.q;
+        this.searchData();
+
+        Polymer.dom(document.body).appendChild(this.$.shareLinkDialog);
+        Polymer.dom(document.body).appendChild(this.$.dialog);
       }
 
       isRecordAvailable(successData){
-
         return successData.length > 0;
       }
 
+      copyText() {
+        var copyText = this.$.sharedLinkInput;
+        copyText.select();
+        document.execCommand("Copy");
+      }
       selectItem(e) {
         var searchInput = this.root.querySelector("#autocomplete");
         searchInput.value  = e.model.__data.item.name;
         var collapse = this.$.collapse;
         collapse.toggle();
-        this.openElasticSearch(searchInput.value);
+        // this.openElasticSearch(searchInput.value);
       }
 
       openDialog(e) {
@@ -196,8 +346,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.$.dialog.open();
       }
 
+      openShareLinkDialog(e) {
+        this.$.sharedLink.innerText =  window.location.href;
+        this.$.sharedLinkInput.value = window.location.href;
+        this.$.shareLinkDialog.open();
+      }
+
       dismissDialog() {
         this.$.dialog.close();
+      }
+
+      dismissShareLinkDialog() {
+        this.$.shareLink.close();
       }
 
       onPriorityFilter() {
@@ -211,7 +371,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             var search = this.root.querySelector("#autocomplete").value;
             if (!search) {
-              this.onSelectionChanged();
+              // this.onSelectionChanged();
               var collapse = this.$.collapse;
               if (collapse.opened) {
                 collapse.toggle()
@@ -251,7 +411,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             var ajax = this.root.querySelector("#autocompleteAjax");
             ajax.body = body;
             ajax.headers["Accept"] = "application/json";
-            ajax.headers["Authorization"] = "Basic ZWxhc3RpYzoxYktwOGlTTDRLZVoySHBJd2FVUjZCNWw=";
+            ajax.headers["Authorization"] = "Basic ZWxhc3RpYzpySVRMSjJiSzA2UW9sRDB3eHFEOThLREQ=";
             ajax.headers["Content-Type"] = "application/json";
 
             var search = this.root.querySelector("#autocomplete").value;
@@ -297,10 +457,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 Polymer.Async.timeOut.after(500),
                 () => {
 
-                if(!query){
+                if(!query) {
+                    this.set('queryParams.q', query);
                     this.onSelectionChanged();
                     return;
                 }
+
+                this.set('queryParams.q', query);
 
                 var body = {
                     "query": {
@@ -314,7 +477,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 var ajax = this.root.querySelector("#ajax");
                 ajax.body = body;
                 ajax.headers["Accept"]="application/json";
-                ajax.headers["Authorization"]="Basic ZWxhc3RpYzoxYktwOGlTTDRLZVoySHBJd2FVUjZCNWw=";
+                ajax.headers["Authorization"]="Basic ZWxhc3RpYzpySVRMSjJiSzA2UW9sRDB3eHFEOThLREQ=";
                 ajax.headers["Content-Type"]="application/json";
 
                 ajax.generateRequest();
@@ -368,20 +531,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       onSelectionChanged() {
-        var selectedItem = this.$.dropdown.selectedItem;
+        var dropdown = this.$.dropdown.selectedItem;
         var priority = this.$.priority.selectedItem;
-        if (selectedItem && priority) {
-          let selectedItemTxt = selectedItem.innerText;
+        if (dropdown && priority) {
+          let dropdownTxt = dropdown.innerText;
           let priorityTxt = priority.innerText;
+
+          this.priorityText = priorityTxt;
+          this.dropdownText = dropdownTxt;
+          this.set("queryParams.sort", dropdownTxt);
+          this.set("queryParams.priority", priorityTxt);
 
           let query;
           let collection = firebase.firestore()
             .collection('userdata');
-          if (selectedItemTxt == "A-Z") {
+          if (dropdownTxt == "A-Z") {
             query = collection.orderBy('name_insensitive', 'asc');
-          } else if (selectedItemTxt == "Z-A") {
+          } else if (dropdownTxt == "Z-A") {
             query = collection.orderBy('name_insensitive', 'desc');
-          } else if (selectedItemTxt == "Most Recent") {
+          } else if (dropdownTxt == "Most Recent") {
             query = collection.orderBy('updated', 'desc');
           }
 
