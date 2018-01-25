@@ -13,6 +13,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
@@ -31,6 +32,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
 <link rel="import" href="shared-styles.html">
 <link rel="import" href="view-form.html">
+<link rel="import" href="my-share.html">
 
 <dom-module id="my-view2">
   <template>
@@ -93,8 +95,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         font-size: 18px;
       }
 
-      .totalcount span{
+      .totalcount span {
         vertical-align: -webkit-baseline-middle;
+      }
+
+      paper-dialog>paper-toast {
+        --paper-toast-background-color: lightgreen;
+        --paper-toast-color: white;
+      }
+
+      .card {
+        max-width: 480px;
       }
     </style>
 
@@ -103,12 +114,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <app-header-layout>
       <app-header slot="header" fixed condenses effects="waterfall">
         <app-toolbar sticky>
-          
-          <div class="totalcount"><span>{{total}}</span></div>
+
+          <div class="totalcount">
+            <span>{{total}}</span>
+          </div>
           <paper-input no-label-float class="flex" value="{{q}}" id="searchInput" label="Search" on-keyup="searchData">
             <paper-icon-button slot="suffix" icon="search"></paper-icon-button>
           </paper-input>
-      
+
           <paper-input class="flex" no-label-float id="autocomplete" label="Autocomplete Search" on-keyup="autocompleteSearchData"></paper-input>
           <iron-collapse id="collapse">
             <div class="content">
@@ -134,7 +147,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <paper-item>Most Recent</paper-item>
             </paper-listbox>
           </paper-menu-button>
-      
+
           <paper-menu-button>
             <paper-icon-button icon="image:tune" title="Priority" slot="dropdown-trigger"></paper-icon-button>
             <paper-listbox slot="dropdown-content" id="priority" selected="{{prioritySelected}}" id="priority" label="Filter" on-selected-item-changed="onPriorityFilter">
@@ -144,96 +157,82 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <paper-item>All</paper-item>
             </paper-listbox>
           </paper-menu-button>
-      
-          <paper-icon-button class="share" title="Share" icon="social:share" on-tap="openShareLinkDialog"></paper-icon-button>
+
+          <my-share placed="list" on-copy="openShareLinkDialog"></my-share>
         </app-toolbar>
       </app-header>
       <div></div>
       <div class="data-container">
-        <iron-ajax
-          url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search"
-          method="POST"
-          handle-as="json"
-          on-response="handleResponse"
-          debounce-duration='300'
-          with-credentials="true"
-          id="ajax">
+        <iron-ajax url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search" method="POST" handle-as="json"
+          on-response="handleResponse" debounce-duration='300' with-credentials="true" id="ajax">
         </iron-ajax>
-        
-        <iron-ajax
-          url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search"
-          method="POST"
-          handle-as="json"
-          on-response="handleAutoCompleteResponse"
-          debounce-duration='100'
-          with-credentials="true"
-          id="autocompleteAjax">
+
+        <iron-ajax url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search" method="POST" handle-as="json"
+          on-response="handleAutoCompleteResponse" debounce-duration='100' with-credentials="true" id="autocompleteAjax">
         </iron-ajax>
-        <!-- <paper-input always-float-label id="autocomplete" label="Autocomplete Search" on-keyup="autocompleteSearchData"></paper-input>
-        <iron-collapse id="collapse">
-          <div class="content">
-            <template is="dom-if" if="[[isRecordAvailable(autocompleteData)]]">
-              <template is="dom-repeat" id="user" items="{{autocompleteData}}">
-                <div class="item autocompleteItem" on-tap="selectItem">
-                  <label>{{item.name}}</label>
-                </div>
-              </template>
-            </template>
-            <template is="dom-if" if="[[!isRecordAvailable(autocompleteData)]]">
-              <div class="item autocompleteItem">
-                No record found !
-              </div>
-            </template>
-          </div>
-        </iron-collapse> -->
-          <div class="layout horizontal end-justified">
-            <div style="margin-right: 8px;">Sort : {{dropdownText}}</div>
-            <span>|</span>
-            <div style="margin-left: 8px;">Filter: {{priorityText}}</div>
-          </div>
+        <div class="layout horizontal end-justified">
+          <div style="margin-right: 8px;">Sort : {{dropdownText}}</div>
+          <span>|</span>
+          <div style="margin-left: 8px;">Filter: {{priorityText}}</div>
+        </div>
+        <div class="layout vertical center">
           <template is="dom-if" if="[[isRecordAvailable(successData)]]">
             <template is="dom-repeat" id="user" items="{{successData}}">
-              <div class="card layout vertical start">
-                <div class="item">
-                  <label>Name :</label>
-                  <span>{{item.name}}</span>
+              <div class="card layout horizontal">
+                <div class="layout vertical start self-end">
+                  <div class="item">
+                    <label>Name : </label>
+                    <span>{{item.name}}</span>
+                  </div>
+                  <div class="item">
+                    <label>Description : </label>
+                    <span>{{item.description}}</span>
+                  </div>
+                  <div class="item">
+                    <label>Priority : </label>
+                    <span>{{item.priority}}</span>
+                  </div>
+                  <div class="item">
+                    <label>Created : </label>
+                    <span>{{item.created}}</span>
+                  </div>
+                  <div class="item">
+                    <label>Updated : </label>
+                    <span>{{item.updated}}</span>
+                  </div>
+                  <paper-button raised class="primary" on-tap="openDialog">Update</paper-button>
                 </div>
-                <div class="item">
-                  <label>Description :</label>
-                  <span>{{item.description}}</span>
-                </div>
-                <div class="item">
-                  <label>Priority :</label>
-                  <span>{{item.priority}}</span>
-                </div>
-                <div class="item">
-                  <label>Created :</label>
-                  <span>{{item.created}}</span>
-                </div>
-                <div class="item">
-                  <label>Updated :</label>
-                  <span>{{item.updated}}</span>
-                </div>
-                <paper-button raised class="primary" on-tap="openDialog">Update</paper-button>
+                <my-share class="item-share" id="[[item.id]]" placed="item" on-copy="openItemShareLinkDialog"></my-share>
               </div>
             </template>
           </template>
           <template is="dom-if" if="[[!isRecordAvailable(successData)]]">
-              <div class="card layout vertical center"> No data found ! </div>
+            <div class="card layout vertical center"> No data found ! </div>
           </template>
+        </div>
         <paper-dialog id="dialog" modal>
           <view-form id="viewForm" mode="edit" on-updated="dismissDialog"></view-form>
         </paper-dialog>
         <paper-dialog id="shareLinkDialog" modal>
           <div id="sharedLink">Share link goes here.</div>
-          <input id="sharedLinkInput" style="opacity: 0"/>
+          <input id="sharedLinkInput" style="opacity: 0" />
           <div class="buttons">
-            <paper-button on-tap="copyText">Copy</paper-button>
+            <paper-button on-tap="copyListLink">Copy</paper-button>
             <paper-button dialog-confirm autofocus>Close</paper-button>
+            <paper-toast id="toast" class="fit-bottom" text="Link Copied!"></paper-toast>
           </div>
         </paper-dialog>
-        </div>
-      </app-header-layout>
+        <paper-dialog id="shareItemLinkDialog" modal>
+          <div id="sharedItemLink">Share link goes here.</div>
+          <input id="sharedItemLinkInput" style="opacity: 0" />
+          <div class="buttons">
+            <paper-button on-tap="copyItemLink">Copy</paper-button>
+            <paper-button dialog-confirm autofocus>Close</paper-button>
+            <paper-toast id="toastItem" class="fit-bottom" text="Link Copied!"></paper-toast>
+          </div>
+        </paper-dialog>
+      </div>
+    </app-header-layout>
   </template>
 
   <script>
@@ -248,19 +247,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           successData: {
             type: Array,
-            value: function(){
+            value: function () {
               return [];
             }
           },
           totalSuccessData: {
             type: Array,
-            value: function(){
+            value: function () {
               return [];
             }
           },
           autocompleteData: {
             type: Array,
-            value: function(){
+            value: function () {
               return [];
             }
           },
@@ -274,11 +273,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           q: String,
           total: {
             type: Number,
-            value: function(){
+            value: function () {
               return 0;
             }
           }
         };
+      }
+
+      openItemShareLinkDialog(e) {
+        this.$.sharedItemLink.innerText = e.detail.link;
+        this.$.sharedItemLinkInput.value = e.detail.link;
+        this.$.shareItemLinkDialog.open();
       }
 
       ready() {
@@ -321,24 +326,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.searchData();
 
         Polymer.dom(document.body).appendChild(this.$.shareLinkDialog);
+        Polymer.dom(document.body).appendChild(this.$.shareItemLinkDialog);
         Polymer.dom(document.body).appendChild(this.$.dialog);
+        toast.fitInto = shareLinkDialog;
+        toastItem.fitInto = shareItemLinkDialog;
       }
 
-      isRecordAvailable(successData){
+      isRecordAvailable(successData) {
         return successData.length > 0;
       }
 
-      copyText() {
-        var copyText = this.$.sharedLinkInput;
-        copyText.select();
-        document.execCommand("Copy");
+      copyListLink() {
+        this.copy(this.$.sharedLinkInput, this.$.toast);
       }
+
+      copyItemLink() {
+        this.copy(this.$.sharedItemLinkInput, this.$.toastItem);
+      }
+
+      copy(inputEl, toastEl){
+        inputEl.select();
+        document.execCommand("Copy");
+        toastEl.text = "Link Copied!";
+        toastEl.open();
+      }
+
       selectItem(e) {
         var searchInput = this.root.querySelector("#autocomplete");
-        searchInput.value  = e.model.__data.item.name;
+        searchInput.value = e.model.__data.item.name;
         var collapse = this.$.collapse;
         collapse.toggle();
-        // this.openElasticSearch(searchInput.value);
       }
 
       openDialog(e) {
@@ -347,8 +364,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       openShareLinkDialog(e) {
-        this.$.sharedLink.innerText =  window.location.href;
-        this.$.sharedLinkInput.value = window.location.href;
+        this.$.sharedLink.innerText = e.detail.link;
+        this.$.sharedLinkInput.value = e.detail.link;
         this.$.shareLinkDialog.open();
       }
 
@@ -380,7 +397,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
 
             var body = {
-              "size" : 50,
+              "size": 50,
               "query": {
                 "bool": {
                   "should": [
@@ -438,50 +455,50 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
 
           var collapse = this.$.collapse;
-            if (!collapse.opened && userData.length > 0) {
-              collapse.toggle()
-            } else if (collapse.opened && userData.length == 0) {
-                collapse.toggle()
-            }
+          if (!collapse.opened && userData.length > 0) {
+            collapse.toggle()
+          } else if (collapse.opened && userData.length == 0) {
+            collapse.toggle()
+          }
           this.set("autocompleteData", userData);
         });
       }
-      
+
       searchData(e) {
-          var search = this.root.querySelector("#searchInput").value;
-          this.openElasticSearch(search);
+        var search = this.root.querySelector("#searchInput").value;
+        this.openElasticSearch(search);
       }
 
-      openElasticSearch(query){
-          this._debouncer = Polymer.Debouncer.debounce(this._debouncer,
-                Polymer.Async.timeOut.after(500),
-                () => {
+      openElasticSearch(query) {
+        this._debouncer = Polymer.Debouncer.debounce(this._debouncer,
+          Polymer.Async.timeOut.after(500),
+          () => {
 
-                if(!query) {
-                    this.set('queryParams.q', query);
-                    this.onSelectionChanged();
-                    return;
+            if (!query) {
+              this.set('queryParams.q', query);
+              this.onSelectionChanged();
+              return;
+            }
+
+            this.set('queryParams.q', query);
+
+            var body = {
+              "query": {
+                "multi_match": {
+                  "query": query,
+                  "fields": ["name", "description"]
                 }
+              }
+            };
 
-                this.set('queryParams.q', query);
+            var ajax = this.root.querySelector("#ajax");
+            ajax.body = body;
+            ajax.headers["Accept"] = "application/json";
+            ajax.headers["Authorization"] = "Basic ZWxhc3RpYzpySVRMSjJiSzA2UW9sRDB3eHFEOThLREQ=";
+            ajax.headers["Content-Type"] = "application/json";
 
-                var body = {
-                    "query": {
-                        "multi_match": {
-                            "query": query,
-                            "fields": ["name", "description"]
-                        }
-                    }
-                };
-
-                var ajax = this.root.querySelector("#ajax");
-                ajax.body = body;
-                ajax.headers["Accept"]="application/json";
-                ajax.headers["Authorization"]="Basic ZWxhc3RpYzpySVRMSjJiSzA2UW9sRDB3eHFEOThLREQ=";
-                ajax.headers["Content-Type"]="application/json";
-
-                ajax.generateRequest();
-        });
+            ajax.generateRequest();
+          });
       }
 
       handleResponse(e) {
@@ -496,8 +513,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         Promise.all(userPromises).then((values) => {
           var userData = [];
-          values.forEach(function(item){
-            if(item){
+          values.forEach(function (item) {
+            if (item) {
               userData.push(item);
             }
           });
@@ -522,9 +539,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       retrieveData(id) {
         var docRef = firebase.firestore().collection("userdata").doc(id);
         return docRef.get().then((doc) => {
-           if(doc.exists){
-             return doc.data();
-           }
+          if (doc.exists) {
+            return doc.data();
+          }
         }).catch(function (error) {
           console.log("Error getting document:", error);
         });

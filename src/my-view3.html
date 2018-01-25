@@ -9,31 +9,95 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="my-view3">
   <template>
-    <style include="shared-styles">
+    <style include="shared-styles iron-flex iron-flex-alignment iron-flex-factors">
       :host {
         display: block;
-
         padding: 10px;
+      }
+
+      .card {
+        max-width: 480px;
+      }
+
+      .item {
+        margin: 8px;
       }
     </style>
 
-    <div class="card">
-      <div class="circle">3</div>
-      <h1>View Three</h1>
-      <p>Modus commodo minimum eum te, vero utinam assueverit per eu.</p>
-      <p>Ea duis bonorum nec, falli paulo aliquid ei eum.Has at minim mucius aliquam, est id tempor laoreet.Pro saepe pertinax ei, ad pri animal labores suscipiantur.</p>
+    <app-route route="{{route}}" pattern="/view3" query-params="{{queryParams}}">
+    </app-route>
+    <div class="layout vertical center">
+      <paper-spinner id="spinner" active></paper-spinner>
     </div>
+    <template is="dom-if" if="[[item]]">
+      <div class="layout vertical center">
+        <div class="card layout horizontal">
+          <div class="layout vertical start self-end">
+            <div class="item">
+              <label>Name : </label>
+              <span>{{item.name}}</span>
+            </div>
+            <div class="item">
+              <label>Description : </label>
+              <span>{{item.description}}</span>
+            </div>
+            <div class="item">
+              <label>Priority : </label>
+              <span>{{item.priority}}</span>
+            </div>
+            <div class="item">
+              <label>Created : </label>
+              <span>{{item.created}}</span>
+            </div>
+            <div class="item">
+              <label>Updated : </label>
+              <span>{{item.updated}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
   </template>
 
   <script>
     class MyView3 extends Polymer.Element {
       static get is() { return 'my-view3'; }
-    }
+      static get properties() {
+        return {
+          route: Object,
+          queryParams: Object,
+          item: Object
+        }
+      }
 
+      ready() {
+        super.ready();
+        var db = firebase.firestore();
+        let id = this.queryParams.id;
+        if (!id) {
+          return;
+        }
+
+        var docRef = db.collection("userdata").doc(id);
+        docRef.get().then((doc) => {
+          if (doc.exists) {
+            this.$.spinner.active = !this.$.spinner.active;
+            this.set('item', doc.data());
+          } else {
+            console.log("No document found for id: ", id);
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
+    }
     window.customElements.define(MyView3.is, MyView3);
   </script>
 </dom-module>

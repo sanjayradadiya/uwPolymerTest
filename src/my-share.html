@@ -1,0 +1,71 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="my-share">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+            }
+
+            paper-icon-button.share {
+                --paper-icon-button: {
+                    width: 36px;
+                    height: 36px;
+                }
+            }
+        </style>
+        <paper-icon-button class="share" title="Share" icon="social:share" on-tap="fireEvent">
+        </paper-icon-button>
+    </template>
+
+    <script>
+        class MyShare extends Polymer.Element {
+            static get is() { return 'my-share'; }
+
+            static get properties() {
+                return {
+                    placed: {
+                        type: String,
+                        value: function () {
+                            return "list";
+                        }
+                    },
+                    id: String
+                };
+            }
+
+            fireEvent() {
+                if (this.placed == 'list') {
+                    this.share("Web Share", "This is link of TODO list.", window.location.href);
+                } else if (this.placed == "item" && this.id) {
+                    let itemLink = window.location.href.split('?')[0].replace('view2', 'view3') + '?id=' + this.id;
+                    this.share("Web Share", "This is link of TODO list item.", itemLink);
+                }
+            }
+
+            share(title, text, url) {
+                if (navigator.share) {
+                    navigator.share({
+                        title: title,
+                        text: text,
+                        url: url,
+                    }).
+                        then(() => {
+                            this.dispatchEvent(new CustomEvent('share', { detail: { shared: true, error: "none", title: title } }));
+                        }).
+                        catch((error) => {
+                            this.dispatchEvent(new CustomEvent('share', { detail: { shared: false, error: error, title: title } }));
+                        });
+                }
+                else {
+                    this.dispatchEvent(new CustomEvent('copy', { detail: { shared: true, error: "none", title: title, link: url } }));
+                }
+            }
+        }
+
+        window.customElements.define(MyShare.is, MyShare);
+    </script>
+</dom-module>
