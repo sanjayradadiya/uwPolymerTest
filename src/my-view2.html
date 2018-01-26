@@ -28,6 +28,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-styles/shadow.html">
 <link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
 <link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
 <link rel="import" href="shared-styles.html">
@@ -43,6 +44,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       .item {
         margin: 8px;
+      }
+
+      label{
+          font-weight: bold;
       }
 
       .content {
@@ -105,7 +110,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       .card {
+        min-width: 480px;
+        cursor: pointer;
         max-width: 480px;
+      }
+
+      .card:hover {
+        @apply --shadow-elevation-6dp;
       }
     </style>
 
@@ -126,7 +137,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <iron-collapse id="collapse">
             <div class="content">
               <template is="dom-if" if="[[isRecordAvailable(autocompleteData)]]">
-                <template is="dom-repeat" id="user" items="{{autocompleteData}}">
+                <template is="dom-repeat" id="userEle" items="{{autocompleteData}}">
                   <div class="item autocompleteItem" on-tap="selectItem">
                     <label>{{item.name}}</label>
                   </div>
@@ -178,7 +189,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <div class="layout vertical center">
           <template is="dom-if" if="[[isRecordAvailable(successData)]]">
             <template is="dom-repeat" id="user" items="{{successData}}">
-              <div class="card layout horizontal">
+              <div class="card layout horizontal" on-tap="openItem">
                 <div class="layout vertical start self-end">
                   <div class="item">
                     <label>Name : </label>
@@ -192,17 +203,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <label>Priority : </label>
                     <span>{{item.priority}}</span>
                   </div>
-                  <div class="item">
-                    <label>Created : </label>
-                    <span>{{item.created}}</span>
-                  </div>
-                  <div class="item">
-                    <label>Updated : </label>
-                    <span>{{item.updated}}</span>
-                  </div>
-                  <paper-button raised class="primary" on-tap="openDialog">Update</paper-button>
                 </div>
-                <my-share class="item-share" id="[[item.id]]" placed="item" on-copy="openItemShareLinkDialog"></my-share>
               </div>
             </template>
           </template>
@@ -210,9 +211,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <div class="card layout vertical center"> No data found ! </div>
           </template>
         </div>
-        <paper-dialog id="dialog" modal>
-          <view-form id="viewForm" mode="edit" on-updated="dismissDialog"></view-form>
-        </paper-dialog>
         <paper-dialog id="shareLinkDialog" modal>
           <div id="sharedLink">Share link goes here.</div>
           <input id="sharedLinkInput" style="opacity: 0" />
@@ -220,15 +218,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-button on-tap="copyListLink">Copy</paper-button>
             <paper-button dialog-confirm autofocus>Close</paper-button>
             <paper-toast id="toast" class="fit-bottom" text="Link Copied!"></paper-toast>
-          </div>
-        </paper-dialog>
-        <paper-dialog id="shareItemLinkDialog" modal>
-          <div id="sharedItemLink">Share link goes here.</div>
-          <input id="sharedItemLinkInput" style="opacity: 0" />
-          <div class="buttons">
-            <paper-button on-tap="copyItemLink">Copy</paper-button>
-            <paper-button dialog-confirm autofocus>Close</paper-button>
-            <paper-toast id="toastItem" class="fit-bottom" text="Link Copied!"></paper-toast>
           </div>
         </paper-dialog>
       </div>
@@ -268,7 +257,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           priorityText: String,
           dropdownText: String,
           searchText: String,
-          route: Object,
+          route: {
+            type: Object,
+            notify: true
+          },
           queryParams: Object,
           q: String,
           total: {
@@ -280,19 +272,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         };
       }
 
-      openItemShareLinkDialog(e) {
-        this.$.sharedItemLink.innerText = e.detail.link;
-        this.$.sharedItemLinkInput.value = e.detail.link;
-        this.$.shareItemLinkDialog.open();
-      }
-
       ready() {
         super.ready();
         self = this;
         var db = firebase.firestore();
         db.collection("userdata").onSnapshot((querySnapshot) => {
-          this.total = querySnapshot.size;
-          console.log("Hello ", this.total);
           self.onSelectionChanged();
         });
 
@@ -326,10 +310,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.searchData();
 
         Polymer.dom(document.body).appendChild(this.$.shareLinkDialog);
-        Polymer.dom(document.body).appendChild(this.$.shareItemLinkDialog);
-        Polymer.dom(document.body).appendChild(this.$.dialog);
         toast.fitInto = shareLinkDialog;
-        toastItem.fitInto = shareItemLinkDialog;
       }
 
       isRecordAvailable(successData) {
@@ -340,11 +321,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.copy(this.$.sharedLinkInput, this.$.toast);
       }
 
-      copyItemLink() {
-        this.copy(this.$.sharedItemLinkInput, this.$.toastItem);
-      }
-
-      copy(inputEl, toastEl){
+      copy(inputEl, toastEl) {
         inputEl.select();
         document.execCommand("Copy");
         toastEl.text = "Link Copied!";
@@ -358,19 +335,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         collapse.toggle();
       }
 
-      openDialog(e) {
-        this.$.viewForm.formData = e.model.__data.item;
-        this.$.dialog.open();
-      }
-
       openShareLinkDialog(e) {
         this.$.sharedLink.innerText = e.detail.link;
         this.$.sharedLinkInput.value = e.detail.link;
         this.$.shareLinkDialog.open();
-      }
-
-      dismissDialog() {
-        this.$.dialog.close();
       }
 
       dismissShareLinkDialog() {
@@ -434,6 +402,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             var search = this.root.querySelector("#autocomplete").value;
             ajax.generateRequest();
           });
+      }
+
+      openItem(e) {
+        this.queryParams = {
+          'id': e.model.__data.item.id
+        }
+
+        this.set('route.path', "view3");
       }
 
       handleAutoCompleteResponse(e) {
@@ -519,13 +495,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
           });
           this.set("successData", userData);
+          this.total = userData.length;
         });
       }
 
       recordBind(query) {
         var arryUser = [];
+
         query.get()
           .then(function (querySnapshot) {
+              self.total = querySnapshot.size;
             querySnapshot.forEach(function (doc) {
               arryUser.push(doc.data());
             });

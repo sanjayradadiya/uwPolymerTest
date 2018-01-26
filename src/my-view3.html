@@ -10,9 +10,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="shared-styles.html">
+<link rel="import" href="view-form.html">
+<link rel="import" href="my-share.html">
 
 <dom-module id="my-view3">
   <template>
@@ -23,7 +30,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       .card {
-        max-width: 480px;
+        max-width: 512px;
       }
 
       .item {
@@ -36,34 +43,63 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <div class="layout vertical center">
       <paper-spinner id="spinner" active></paper-spinner>
     </div>
-    <template is="dom-if" if="[[item]]">
-      <div class="layout vertical center">
-        <div class="card layout horizontal">
-          <div class="layout vertical start self-end">
-            <div class="item">
-              <label>Name : </label>
-              <span>{{item.name}}</span>
+    <div class="layout vertical center">
+      <template is="dom-if" if="[[!dataFound]]">
+        <div class="card layout vertical center"> Document not Found ! </div>
+      </template>
+      <template is="dom-if" if="[[dataFound]]">
+        <div class="layout vertical center">
+          <div class="card layout horizontal">
+            <div class="layout vertical start self-end">
+              <div class="item">
+                <label>Name : </label>
+                <span>{{item.name}}</span>
+              </div>
+              <div class="item">
+                <label>Description : </label>
+                <span>{{item.description}}</span>
+              </div>
+              <div class="item">
+                <label>Priority : </label>
+                <span>{{item.priority}}</span>
+              </div>
+              <div class="item">
+                <label>Updated : </label>
+                <span>{{item.updated}}</span>
+              </div>
             </div>
-            <div class="item">
-              <label>Description : </label>
-              <span>{{item.description}}</span>
+            <div class="layout horizontal">
+              <paper-icon-button class="edit" title="Edit" icon="create" on-tap="openDialog">
+              </paper-icon-button>
+              <paper-icon-button class="delete" title="Delete" icon="delete" on-tap="openDeleteDialog">
+              </paper-icon-button>
             </div>
-            <div class="item">
-              <label>Priority : </label>
-              <span>{{item.priority}}</span>
-            </div>
-            <div class="item">
-              <label>Created : </label>
-              <span>{{item.created}}</span>
-            </div>
-            <div class="item">
-              <label>Updated : </label>
-              <span>{{item.updated}}</span>
-            </div>
+            <my-share class="item-share" id="[[item.id]]" placed="item" on-copy="openItemShareLinkDialog"></my-share>
           </div>
         </div>
+      </template>
+    </div>
+    <paper-dialog id="dialog" modal>
+      <view-form id="viewForm" mode="edit" on-updated="dismissDialog"></view-form>
+    </paper-dialog>
+    <paper-dialog id="shareItemLinkDialog" modal>
+      <div id="sharedItemLink">Share link goes here.</div>
+      <input id="sharedItemLinkInput" style="opacity: 0" />
+      <div class="buttons">
+        <paper-button on-tap="copyItemLink">Copy</paper-button>
+        <paper-button dialog-dismiss autofocus>Close</paper-button>
+        <paper-toast id="toastItem" class="fit-bottom" text="Link Copied!"></paper-toast>
       </div>
-    </template>
+    </paper-dialog>
+    <paper-dialog id="deleteDialog" modal>
+      <h2>Delete ToDo Item?</h2>
+      <p>Are You Sure?</p>
+      <div class="buttons">
+        <paper-button dialog-dismiss>No</paper-button>
+        <paper-button autofocus on-tap="deleteItem">Yes</paper-button>
+      </div>
+    </paper-dialog>
+    <paper-toast id="deleteMessage" text="Document Successfully Deleted!"></paper-toast>
   </template>
 
   <script>
@@ -72,29 +108,101 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       static get properties() {
         return {
           route: Object,
-          queryParams: Object,
-          item: Object
+          queryParams: {
+            type: Object
+          },
+          item: Object,
+          id: {
+            type: String,
+            observer: "onIdChanged"
+          },
+          dataFound: {
+            type: Boolean,
+            value: function () {
+              return false;
+            }
+          }
         }
+      }
+
+      onIdChanged() {
+        let id = this.id;
+        if (!id) {
+          this.$.spinner.active = false;
+          this.dataFound = false;
+          return;
+        }
+
+        var db = firebase.firestore();
+        var docRef = db.collection("userdata").doc(id);
+        docRef.onSnapshot((doc) => {
+          if (doc.exists) {
+            this.$.spinner.active = false;
+            this.dataFound = true;
+            this.set('item', doc.data());
+          } else {
+            this.$.spinner.active = true;
+            this.dataFound = false;
+            console.log("No document found for id: ", id);
+          }
+        });
+        //   docRef.get().then((doc) => {
+
+        //   }).catch(function (error) {
+        //     console.log("Error getting document:", error);
+        //   });
       }
 
       ready() {
         super.ready();
-        var db = firebase.firestore();
-        let id = this.queryParams.id;
-        if (!id) {
-          return;
-        }
 
-        var docRef = db.collection("userdata").doc(id);
-        docRef.get().then((doc) => {
-          if (doc.exists) {
-            this.$.spinner.active = !this.$.spinner.active;
-            this.set('item', doc.data());
-          } else {
-            console.log("No document found for id: ", id);
-          }
+        Polymer.dom(document.body).appendChild(this.$.shareItemLinkDialog);
+        Polymer.dom(document.body).appendChild(this.$.dialog);
+        Polymer.dom(document.body).appendChild(this.$.deleteDialog);
+        toastItem.fitInto = shareItemLinkDialog;
+
+        this.id = this.queryParams.id;
+      }
+
+      openItemShareLinkDialog(e) {
+        this.$.sharedItemLink.innerText = e.detail.link;
+        this.$.sharedItemLinkInput.value = e.detail.link;
+        this.$.shareItemLinkDialog.open();
+      }
+
+      openDialog(e) {
+        this.$.viewForm.formData = this.item;
+        this.$.dialog.open();
+      }
+
+      openDeleteDialog(e) {
+        this.$.deleteDialog.open();
+      }
+
+      dismissDialog() {
+        this.$.dialog.close();
+      }
+
+      copyItemLink() {
+        this.copy(this.$.sharedItemLinkInput, this.$.toastItem);
+      }
+
+      copy(inputEl, toastEl) {
+        inputEl.select();
+        document.execCommand("Copy");
+        toastEl.text = "Link Copied!";
+        toastEl.open();
+      }
+
+      deleteItem() {
+        var db = firebase.firestore();
+        db.collection("userdata").doc(this.item.id).delete().then(() => {
+          this.$.deleteDialog.close();
+          window.location.href = "/view2";
+          // this.queryParams = {};
+          // this.set('route.path', "view2");
         }).catch(function (error) {
-          console.log("Error getting document:", error);
+          console.log("error in delete!");
         });
       }
     }
