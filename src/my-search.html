@@ -1,0 +1,265 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="my-search">
+    <template>
+        <style include="shared-styles iron-flex iron-flex-alignment iron-flex-factors">
+            :host {
+                display: block;
+            }
+        </style>
+        <iron-ajax 
+            url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search" 
+            method="POST" 
+            handle-as="json"
+            on-response="handleResponse" 
+            debounce-duration='300' 
+            with-credentials="true" 
+            id="ajax">
+        </iron-ajax>
+
+        <iron-ajax 
+            url="https://ab47b5127d7ca47842787bf2ba24f426.us-east-1.aws.found.io:9243/_search" 
+            method="POST" 
+            handle-as="json"
+            on-response="handleAutoCompleteResponse" 
+            debounce-duration='100' 
+            with-credentials="true" 
+            id="autocompleteAjax">
+        </iron-ajax>
+        <template is="dom-if" if="[[_eq(searchType, 'List')]]">
+            <paper-input 
+                no-label-float 
+                class="flex" 
+                value="{{q}}" 
+                id="searchInput" 
+                label="Search" 
+                on-keyup="searchData">
+                <paper-icon-button slot="suffix" icon="search"></paper-icon-button>
+            </paper-input>
+        </template>
+        <template is="dom-if" if="[[_eq(searchType, 'AutoComplete')]]">
+            <paper-input 
+                class="flex" 
+                no-label-float 
+                id="autocomplete" 
+                label="Autocomplete Search"
+                on-keyup="autocompleteSearchData"></paper-input>
+                <iron-collapse id="collapse">
+                    <div class="content">
+                        <template is="dom-if" if="[[isRecordAvailable(data)]]">
+                            <template is="dom-repeat" id="userEle" items="{{data}}">
+                                <div class="item autocompleteItem" on-tap="selectItem">
+                                    <label>{{item.name}}</label>
+                                </div>
+                            </template>
+                        </template>
+                        <template is="dom-if" if="[[!isRecordAvailable(data)]]">
+                            <div class="item autocompleteItem">
+                                No record found !
+                            </div>
+                        </template>
+                    </div>
+                </iron-collapse>
+        </template>
+        <template is="dom-if" if="[[_eq(searchType, 'Global')]]">
+
+        </template>
+    </template>
+
+    <script>
+        class MySearch extends Polymer.Element {
+            static get is() { return 'my-search'; }
+
+            static get properties() {
+                return {
+                    data: {
+                        type: Array,
+                        value: function () {
+                            return [];
+                        },
+                        notify: true
+                    },
+                    searchType: {
+                        type: String,
+                        value: "Global"
+                    },
+                    q: String,
+                    collection: String
+                };
+            }
+
+            handleResponse(e) {
+                var hits = e.detail.__data.response.hits.hits;
+                var userPromises = [];
+                for (var hit in hits) {
+                    var id = hits[hit]._id;
+                    var document = this.retrieveData(id);
+
+                    userPromises.push(document);
+                }
+
+                Promise.all(userPromises).then((values) => {
+                    var data = [];
+                    values.forEach(function (item) {
+                        if (item) {
+                            data.push(item);
+                        }
+                    });
+                    this.set("data", data);
+                    this.total = data.length;
+                });
+            }
+
+            retrieveData(id) {
+                var docRef = firebase.firestore().collection(this.collection).doc(id);
+                return docRef.get().then((doc) => {
+                    if (doc.exists) {
+                        return doc.data();
+                    }
+                }).catch(function (error) {
+                    console.log("Error getting document:", error);
+                });
+            }
+
+            searchData(e) {
+                var search = this.root.querySelector("#searchInput").value;
+                this.openElasticSearch(search);
+            }
+        
+              openElasticSearch(query) {
+                this._debouncer = Polymer.Debouncer.debounce(this._debouncer,
+                    Polymer.Async.timeOut.after(500),
+                    () => {
+
+                        if (!query) {
+                            this.set('queryParams.q', query);
+                            this.onSelectionChanged();
+                            return;
+                        }
+
+                        this.set('queryParams.q', query);
+
+                        var body = {
+                            "query": {
+                                "multi_match": {
+                                    "query": query,
+                                    "fields": ["name", "description"]
+                                }
+                            }
+                        };
+
+                        var ajax = this.root.querySelector("#ajax");
+                        ajax.body = body;
+                        ajax.headers["Accept"] = "application/json";
+                        ajax.headers["Authorization"] = "Basic ZWxhc3RpYzpySVRMSjJiSzA2UW9sRDB3eHFEOThLREQ=";
+                        ajax.headers["Content-Type"] = "application/json";
+
+                        ajax.generateRequest();
+                    });
+            }
+
+            autocompleteSearchData(e) {
+                this._debouncer = Polymer.Debouncer.debounce(this._debouncer,
+                  Polymer.Async.timeOut.after(100),
+                  () => {
+        
+                    var search = this.root.querySelector("#autocomplete").value;
+                    if (!search) {
+                      var collapse = this.$.collapse;
+                      if (collapse.opened) {
+                        collapse.toggle();
+                      }
+                      return;
+                    }
+        
+                    var body = {
+                      "size": 50,
+                      "query": {
+                        "bool": {
+                          "should": [
+                            {
+                              "multi_match": {
+                                "query": search,
+                                "fields": [
+                                  "name"
+                                ],
+                                "type": "phrase_prefix",
+                                "operator": "OR",
+                                "slop": 0,
+                                "prefix_length": 0,
+                                "max_expansions": 50,
+                                "lenient": false,
+                                "zero_terms_query": "NONE",
+                                "boost": 1
+                              }
+                            }
+                          ],
+                          "disable_coord": false,
+                          "adjust_pure_negative": true,
+                          "boost": 1
+                        }
+                      }
+                    };
+
+                    var ajax = this.root.querySelector("#autocompleteAjax");
+                    ajax.body = body;
+                    ajax.headers["Accept"] = "application/json";
+                    ajax.headers["Authorization"] = "Basic ZWxhc3RpYzpySVRMSjJiSzA2UW9sRDB3eHFEOThLREQ=";
+                    ajax.headers["Content-Type"] = "application/json";
+
+                    var search = this.root.querySelector("#autocomplete").value;
+                    ajax.generateRequest();
+                  });
+              }
+
+            isRecordAvailable(data) {
+                return data.length > 0;
+            }
+
+            _eq(str1, str2) {
+                return str1 == str2;
+            }
+
+            fireEvent() {
+                let url = window.location.href;
+                if (this.id) {
+                    if (url.indexOf('?') != -1) {
+                        url += "&";
+                    } else {
+                        url += "?";
+                    }
+                    url += "mode=view&id=" + this.id;
+                }
+
+                this.share("Web Share", "This is link of TODO list item.", url);
+            }
+
+            share(title, text, url) {
+                if (navigator.share) {
+                    navigator.share({
+                        title: title,
+                        text: text,
+                        url: url,
+                    }).
+                    then(() => {
+                        this.dispatchEvent(new CustomEvent('share', { detail: { shared: true, error: "none", title: title } }));
+                    }).
+                    catch((error) => {
+                        this.dispatchEvent(new CustomEvent('share', { detail: { shared: false, error: error, title: title } }));
+                    });
+                }
+                else {
+                    this.dispatchEvent(new CustomEvent('copy', { detail: { shared: true, error: "none", title: title, link: url } }));
+                }
+            }
+        }
+
+        window.customElements.define(MySearch.is, MySearch);
+    </script>
+</dom-module>

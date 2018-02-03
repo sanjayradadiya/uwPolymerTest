@@ -9,7 +9,6 @@
             :host {
                 display: block;
             }
-
         </style>
         <paper-icon-button class="share" title="Share" icon="social:share" on-tap="fireEvent">
         </paper-icon-button>
@@ -32,12 +31,16 @@
             }
 
             fireEvent() {
-                if (this.placed == 'list') {
-                    this.share("Web Share", "This is link of TODO list.", window.location.href);
-                } else if (this.placed == "item" && this.id) {
-                    let itemLink = window.location.href.split('?')[0].replace('view2', 'view3') + '?id=' + this.id;
-                    this.share("Web Share", "This is link of TODO list item.", itemLink);
-                }
+                let url = window.location.href;
+                // if (this.id) {
+                //     if (url.indexOf('?') != -1) {
+                //         url += "&";
+                //     } else {
+                //         url += "?";
+                //     }
+                //     url += "mode=view&id=" + this.id;
+                // }
+                this.share("Web Share", "This is link of TODO list item.", url);
             }
 
             share(title, text, url) {

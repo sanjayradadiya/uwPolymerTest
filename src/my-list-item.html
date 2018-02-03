@@ -1,0 +1,104 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/polymer/lib/utils/debounce.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-styles/shadow.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="item-form.html">
+
+<dom-module id="my-list-item">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment iron-flex-factors">
+      :host {
+        display: block;
+      }
+
+      .card {
+        min-width: 480px;
+        cursor: pointer;
+        max-width: 480px;
+        margin: 4px;
+      }
+
+      .card:hover {
+        @apply --shadow-elevation-6dp;
+      }
+    </style>
+
+    <div class="layout vertical">
+      <template is="dom-if" if="[[isRecordAvailable(item)]]">
+        <div class="card layout horizontal">
+          <div class="layout vertical start self-end">
+            <div class="item">
+              <label>Name : </label>
+              <span>{{item.name}}</span>
+            </div>
+            <div class="item">
+              <label>Description : </label>
+              <span>{{item.description}}</span>
+            </div>
+            <div class="item">
+              <label>Priority : </label>
+              <span>{{item.priority}}</span>
+            </div>
+            <template is="dom-if" if="[[isViewMode(mode)]]">
+              <div class="item">
+                <label>Updated : </label>
+                <span>{{item.updated}}</span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </template>
+
+  <script>
+    class MyListItem extends Polymer.Element {
+      static get is() { return 'my-list-item'; }
+
+      static get properties() {
+        return {
+          loading: {
+            type: Boolean,
+            value: false
+          },
+          item: {
+            type: Object
+          },
+          mode: {
+            type: String
+          }
+        };
+      }
+
+      isRecordAvailable(item) {
+        return item != undefined;
+      }
+
+      isViewMode(mode) {
+        return this.mode == "view";
+      }
+    }
+
+    window.customElements.define(MyListItem.is, MyListItem);
+  </script>
+</dom-module>

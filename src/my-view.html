@@ -12,7 +12,7 @@
 <link rel="import" href="my-share.html">
 <link rel="import" href="my-list-item.html">
 
-<dom-module id="my-view3">
+<dom-module id="my-view">
   <template>
     <style include="shared-styles iron-flex iron-flex-alignment iron-flex-factors">
       :host {
@@ -27,6 +27,10 @@
       .item {
         margin: 8px;
       }
+
+      .action-bar {
+        margin: 8px;
+      }
     </style>
 
     <div class="layout vertical center">
@@ -34,31 +38,25 @@
         <div class="layout vertical center"> Document not Found ! </div>
       </template>
       <template is="dom-if" if="[[dataFound]]">
-        <div class="layout vertical center">
-          <div class="layout horizontal">
-            <my-list-item item="{{item}}"></my-list-item>
-          </div>
-          <div class="layout horizontal">
-              <paper-icon-button class="edit" title="Edit" icon="create" on-tap="openDialog">
-              </paper-icon-button>
-              <paper-icon-button class="delete" title="Delete" icon="delete" on-tap="openDeleteDialog">
-              </paper-icon-button>
-              <my-share class="item-share" id="[[item.id]]" placed="item" on-copy="openItemShareLinkDialog"></my-share>
-          </div>
+        <my-list-item item="{{item}}" mode="view"></my-list-item>
+        <div class="layout horizontal action-bar">
+          <paper-icon-button class="edit" title="Edit" icon="create" on-tap="openDialog">
+          </paper-icon-button>
+          <paper-icon-button class="delete" title="Delete" icon="delete" on-tap="openDeleteDialog">
+          </paper-icon-button>
+          <my-share class="item-share" id="[[item.id]]" placed="item" on-copy="openItemShareLinkDialog"></my-share>
         </div>
-      </template>
     </div>
-    <paper-dialog id="updateDialog" modal>
-      <item-form
-        id="viewForm"
-        mode="update"
-        form-data="{{item}}"
-        collection="{{collection}}"
-        on-updated="dismissUpdateDialog"
+    </div>
+    </template>
+    </div>
+    <paper-dialog id="updateDialog">
+      <h2>Update Item</h2>
+      <item-form id="viewForm" mode="update" form-data="{{item}}" collection="{{collection}}" on-updated="dismissUpdateDialog"
         on-cancel="dismissUpdateDialog">
       </item-form>
     </paper-dialog>
-    <paper-dialog id="shareItemLinkDialog" modal>
+    <paper-dialog id="shareItemLinkDialog">
       <div id="sharedItemLink">Share link goes here.</div>
       <input id="sharedItemLinkInput" style="opacity: 0" />
       <div class="buttons">
@@ -67,7 +65,7 @@
         <paper-toast id="toastItem" class="fit-bottom" text="Link Copied!"></paper-toast>
       </div>
     </paper-dialog>
-    <paper-dialog id="deleteDialog" modal>
+    <paper-dialog id="deleteDialog">
       <h2>Delete ToDo Item?</h2>
       <p>Are You Sure?</p>
       <div class="buttons">
@@ -79,8 +77,8 @@
   </template>
 
   <script>
-    class MyView3 extends Polymer.Element {
-      static get is() { return 'my-view3'; }
+    class MyView extends Polymer.Element {
+      static get is() { return 'my-view'; }
       static get properties() {
         return {
           route: Object,
@@ -108,7 +106,6 @@
       onCollectionChanged() {
         let collection = this.collection;
         if (!collection || !this.id) {
-          this.dataFound = false;
           return;
         }
 
@@ -117,7 +114,7 @@
 
       onIdChanged() {
         let id = this.id;
-        if (!id || !this.collection ) {
+        if (!id || !this.collection) {
           this.dataFound = false;
           return;
         }
@@ -134,9 +131,11 @@
             this.set('item', doc.data());
           } else {
             this.dataFound = false;
+            console.warn("No document found for id: ", this.id);
           }
         });
       }
+
       ready() {
         super.ready();
 
@@ -153,7 +152,6 @@
       }
 
       openDialog(e) {
-        this.$.viewForm.formData = this.item;
         this.$.updateDialog.open();
       }
 
@@ -177,16 +175,19 @@
       }
 
       deleteItem() {
-        this.dispatchEvent(new CustomEvent("deleted"));
-        this.$.deleteDialog.close();
+        this.dispatchEvent(new CustomEvent('deleted'));
         var db = firebase.firestore();
-        db.collection(this.collection).doc(this.item.id).delete().then(() => {
-          
-        }).catch(function (error) {
-          console.log("error in delete!");
-        });
+        this.$.deleteDialog.close();
+        db.collection("userdata")
+          .doc(this.item.id)
+          .delete()
+          .then(() => {
+          }).catch(function (error) {
+            this.dispatchEvent(new CustomEvent('error', { detail: "Error in delete document." }));
+          });
       }
     }
-    window.customElements.define(MyView3.is, MyView3);
+
+    window.customElements.define(MyView.is, MyView);
   </script>
 </dom-module>

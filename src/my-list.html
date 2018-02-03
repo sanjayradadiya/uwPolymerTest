@@ -32,10 +32,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
 <link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
 <link rel="import" href="shared-styles.html">
-<link rel="import" href="view-form.html">
+<link rel="import" href="item-form.html">
 <link rel="import" href="my-share.html">
+<link rel="import" href="my-list-item.html">
 
-<dom-module id="my-view2">
+<dom-module id="my-list">
   <template>
     <style include="shared-styles iron-flex iron-flex-alignment iron-flex-factors">
       :host {
@@ -46,8 +47,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 8px;
       }
 
-      label{
-          font-weight: bold;
+      label {
+        font-weight: bold;
       }
 
       .content {
@@ -120,8 +121,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
 
-    <app-route route="{{route}}" pattern="/view2" query-params="{{queryParams}}">
-    </app-route>
     <app-header-layout>
       <app-header slot="header" fixed condenses effects="waterfall">
         <app-toolbar sticky>
@@ -189,22 +188,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <div class="layout vertical center">
           <template is="dom-if" if="[[isRecordAvailable(successData)]]">
             <template is="dom-repeat" id="user" items="{{successData}}">
-              <div class="card layout horizontal" on-tap="openItem">
-                <div class="layout vertical start self-end">
-                  <div class="item">
-                    <label>Name : </label>
-                    <span>{{item.name}}</span>
-                  </div>
-                  <div class="item">
-                    <label>Description : </label>
-                    <span>{{item.description}}</span>
-                  </div>
-                  <div class="item">
-                    <label>Priority : </label>
-                    <span>{{item.priority}}</span>
-                  </div>
-                </div>
-              </div>
+              <my-list-item item="{{item}}" on-tap="openItem"></my-list-item>
             </template>
           </template>
           <template is="dom-if" if="[[!isRecordAvailable(successData)]]">
@@ -225,8 +209,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </template>
 
   <script>
-    class MyView2 extends Polymer.Element {
-      static get is() { return 'my-view2'; }
+    class MyList extends Polymer.Element {
+      static get is() { return 'my-list'; }
 
       static get properties() {
         return {
@@ -261,14 +245,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Object,
             notify: true
           },
-          queryParams: Object,
+          queryParams: {
+            type: Object,
+            notify: true
+          },
           q: String,
           total: {
             type: Number,
             value: function () {
               return 0;
             }
-          }
+          },
+          collection: String
         };
       }
 
@@ -276,7 +264,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         super.ready();
         self = this;
         var db = firebase.firestore();
-        db.collection("userdata").onSnapshot((querySnapshot) => {
+        db.collection(this.collection).onSnapshot((querySnapshot) => {
           self.onSelectionChanged();
         });
 
@@ -284,7 +272,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         autocomplete.style.paddingBottom = "0px";
 
         var priority = this.root.querySelector("#priority").$.container;
-        var priorityTxt = this.queryParams.priority;
+        var priorityTxt = this.queryParams ? this.queryParams.priority : undefined;
         if (!priorityTxt || priorityTxt == 'All') {
           this.prioritySelected = "3";
         } else if (priorityTxt == "High") {
@@ -296,7 +284,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
 
         var dropdown = this.root.querySelector("#dropdown").$.container;
-        var sort = this.queryParams.sort;
+        var sort = this.queryParams ? this.queryParams.sort : undefined;
 
         if (!sort || sort == "A-Z") {
           this.dropdownSelected = "0";
@@ -306,7 +294,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.dropdownSelected = "2";
         }
 
-        this.q = this.queryParams.q;
+        this.q = this.queryParams ? this.queryParams.q : undefined;
         this.searchData();
 
         Polymer.dom(document.body).appendChild(this.$.shareLinkDialog);
@@ -405,11 +393,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       openItem(e) {
-        this.queryParams = {
-          'id': e.model.__data.item.id
-        }
-
-        this.set('route.path', "view3");
+        this.dispatchEvent(new CustomEvent('open', { detail: { id: e.model.__data.item.id } }));
       }
 
       handleAutoCompleteResponse(e) {
@@ -504,7 +488,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         query.get()
           .then(function (querySnapshot) {
-              self.total = querySnapshot.size;
+            self.total = querySnapshot.size;
             querySnapshot.forEach(function (doc) {
               arryUser.push(doc.data());
             });
@@ -516,7 +500,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       retrieveData(id) {
-        var docRef = firebase.firestore().collection("userdata").doc(id);
+        var docRef = firebase.firestore().collection(this.collection).doc(id);
         return docRef.get().then((doc) => {
           if (doc.exists) {
             return doc.data();
@@ -540,7 +524,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           let query;
           let collection = firebase.firestore()
-            .collection('userdata');
+            .collection(this.collection);
           if (dropdownTxt == "A-Z") {
             query = collection.orderBy('name_insensitive', 'asc');
           } else if (dropdownTxt == "Z-A") {
@@ -567,6 +551,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     }
 
-    window.customElements.define(MyView2.is, MyView2);
+    window.customElements.define(MyList.is, MyList);
   </script>
 </dom-module>
