@@ -201,7 +201,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div class="buttons">
             <paper-button on-tap="copyListLink">Copy</paper-button>
             <paper-button dialog-confirm autofocus>Close</paper-button>
-            <paper-toast id="toast" class="fit-bottom" text="Link Copied!"></paper-toast>
+            <paper-toast id="toast" text="Link Copied!"></paper-toast>
           </div>
         </paper-dialog>
       </div>
@@ -298,7 +298,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.searchData();
 
         Polymer.dom(document.body).appendChild(this.$.shareLinkDialog);
-        toast.fitInto = shareLinkDialog;
+        toast.fitInto = document.body;
       }
 
       isRecordAvailable(successData) {
