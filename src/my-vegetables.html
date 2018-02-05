@@ -14,13 +14,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="my-vegetables">
     <template>
-        <style include="shared-styles">
+        <style include="shared-styles iron-flex iron-flex-alignment iron-flex-factors">
             :host {
                 display: block;
             }
 
-            .loader-wapper {
-                background: rgba(255, 255, 255, 0.5);
+            paper-fab {
+                position: fixed;
+                bottom: 20px;
+                right: 10px;
+            }
+
+            my-view3 {
+                margin: 4px;
+                padding: 4px;
             }
         </style>
 

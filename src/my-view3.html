@@ -64,7 +64,7 @@
       <div class="buttons">
         <paper-button on-tap="copyItemLink">Copy</paper-button>
         <paper-button dialog-dismiss autofocus>Close</paper-button>
-        <paper-toast id="toastItem" class="fit-bottom" text="Link Copied!"></paper-toast>
+        <paper-toast id="toastItem" text="Link Copied!"></paper-toast>
       </div>
     </paper-dialog>
     <paper-dialog id="deleteDialog" modal>
@@ -143,7 +143,7 @@
         Polymer.dom(document.body).appendChild(this.$.shareItemLinkDialog);
         Polymer.dom(document.body).appendChild(this.$.updateDialog);
         Polymer.dom(document.body).appendChild(this.$.deleteDialog);
-        toastItem.fitInto = shareItemLinkDialog;
+        toastItem.fitInto = document.body;
       }
 
       openItemShareLinkDialog(e) {
